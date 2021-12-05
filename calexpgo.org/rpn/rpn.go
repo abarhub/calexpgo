@@ -17,18 +17,34 @@ func isInt(s string) bool {
 }
 
 func executeOperation(s string, nombres []int) ([]int, error) {
-	if s == "+" {
-		n1 := nombres[len(nombres)-1]
-		n2 := nombres[len(nombres)-2]
-		n := n1 + n2
+	if s == "+" || s == "-" || s == "*" || s == "/" || s == "%" {
+		if len(nombres) < 2 {
+			return nil, errors.New("la pile n'est pas correcte")
+		}
+		n1 := nombres[len(nombres)-2]
+		n2 := nombres[len(nombres)-1]
+		var n = 0
+		if s == "+" {
+			n = n1 + n2
+		} else if s == "-" {
+			n = n1 - n2
+		} else if s == "*" {
+			n = n1 * n2
+		} else if s == "/" {
+			if n2 == 0 {
+				return nil, errors.New("division par zero")
+			}
+			n = n1 / n2
+		} else if s == "%" {
+			if n2 == 0 {
+				return nil, errors.New("division par zero")
+			}
+			n = n1 % n2
+		}
 		nombres = nombres[:len(nombres)-2]
 		nombres = append(nombres, n)
-	} else if s == "-" {
-		n1 := nombres[len(nombres)-1]
-		n2 := nombres[len(nombres)-2]
-		n := n2 - n1
-		nombres = nombres[:len(nombres)-2]
-		nombres = append(nombres, n)
+	} else {
+		return nil, errors.New("opérateur invalide : " + s)
 	}
 	return nombres, nil
 }
@@ -48,12 +64,16 @@ func Run(param []string) (int, error) {
 			nombres, err = executeOperation(s, nombres)
 			if err != nil {
 				fmt.Errorf("erreur: %s", err)
-				break
+				return 0, err
 			}
 		}
 	}
 
 	fmt.Println(nombres)
 
-	return nombres[0], nil
+	if len(nombres) != 1 {
+		return 0, errors.New("la pile n'est pas correcte")
+	} else {
+		return nombres[0], nil
+	}
 }

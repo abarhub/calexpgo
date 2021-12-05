@@ -1,7 +1,7 @@
 package main
 
 import (
-	"calexpgo/test.org/rpn"
+	"calexpgo/calexpgo.org/rpn"
 	"fmt"
 	"os"
 )
