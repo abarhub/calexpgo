@@ -13,15 +13,16 @@ func TestRun(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int
+		want []int
 	}{
-		{"test1", args{[]string{"1", "2", "+"}}, 3},
-		{"test1", args{[]string{"4", "5", "+", "2", "-"}}, 7},
+		{"test1", args{[]string{"1", "2", "+"}}, []int{3}},
+		{"test2", args{[]string{"4", "5", "+", "2", "-"}}, []int{7}},
+		{"test2", args{[]string{"1", "2", "+", ";", "3", "4", "*"}}, []int{3, 12}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := Run(tt.args.param); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("executeOperation() = %v, want %v", got, tt.want)
+			if got, err := Run(tt.args.param); !reflect.DeepEqual(got, tt.want) || err != nil {
+				t.Errorf("executeOperation() = (%v,%v) want %v", got, err, tt.want)
 			}
 		})
 	}
@@ -41,7 +42,7 @@ func TestRunError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, err := Run(tt.args.param); !reflect.DeepEqual(got, 0) || !reflect.DeepEqual(err, tt.want) {
+			if got, err := Run(tt.args.param); !reflect.DeepEqual(got, []int{}) || !reflect.DeepEqual(err, tt.want) {
 				t.Errorf("executeOperation() = (%v, %v) want %v", got, err, tt.want)
 			}
 		})
@@ -69,6 +70,10 @@ func Test_executeOperation(t *testing.T) {
 		{"test_reste_div", args{"%", []int{7, 3}}, res{[]int{1}, nil}},
 		{"test_plus2", args{"+", []int{1, 2, 3, 4, 5, 6}}, res{[]int{1, 2, 3, 4, 11}, nil}},
 		{"test_moins2", args{"-", []int{1, 2, 3, 4, 7, 4}}, res{[]int{1, 2, 3, 4, 3}, nil}},
+		{"test_dup", args{"dup", []int{8}}, res{[]int{8, 8}, nil}},
+		{"test_drop", args{"drop", []int{4, 5}}, res{[]int{4}, nil}},
+		{"test_swap", args{"swap", []int{4, 5}}, res{[]int{5, 4}, nil}},
+		{"test_over", args{"over", []int{4, 5}}, res{[]int{4, 5, 4}, nil}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

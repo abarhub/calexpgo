@@ -7,19 +7,20 @@ import (
 )
 
 func main() {
-
-	argsWithProg := os.Args
-
 	argsWithoutProg := os.Args[1:]
-
-	fmt.Println(argsWithProg)
 
 	res, err := rpn.Run(argsWithoutProg)
 
 	if err != nil {
-		fmt.Errorf("error: %s", err)
+		fmt.Println("error: %s", err)
 	} else {
-		fmt.Println(res)
+		if res == nil {
+			fmt.Println("error: no result")
+		} else {
+			for _, n := range res {
+				fmt.Println(n)
+			}
+		}
 	}
 
 }
