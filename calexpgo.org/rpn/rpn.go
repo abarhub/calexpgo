@@ -156,8 +156,6 @@ func Run(param []string) ([]int, error) {
 		}
 	}
 
-	//fmt.Println(nombres)
-
 	if len(nombres) != 1 {
 		return []int{}, fmt.Errorf("la pile n'est pas correcte")
 	} else {

@@ -12,7 +12,7 @@ func main() {
 	res, err := rpn.Run(argsWithoutProg)
 
 	if err != nil {
-		fmt.Println("error: %s", err)
+		fmt.Println("error:", err)
 	} else {
 		if res == nil {
 			fmt.Println("error: no result")

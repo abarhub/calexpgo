@@ -17,7 +17,9 @@ func TestRun(t *testing.T) {
 	}{
 		{"test1", args{[]string{"1", "2", "+"}}, []int{3}},
 		{"test2", args{[]string{"4", "5", "+", "2", "-"}}, []int{7}},
-		{"test2", args{[]string{"1", "2", "+", ";", "3", "4", "*"}}, []int{3, 12}},
+		{"test3", args{[]string{"1", "2", "+", ";", "3", "4", "*"}}, []int{3, 12}},
+		{"dup", args{[]string{"4", "dup", "+"}}, []int{8}},
+		{"DUP", args{[]string{"1", "DUP", "+"}}, []int{2}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
