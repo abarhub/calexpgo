@@ -126,6 +126,7 @@ func Run(param []string) ([]int, error) {
 	var nombres = make([]int, 0, 100)
 
 	var resultat = []int{}
+	var programmes = make(map[string][]string)
 
 	for i := 0; i < len(param); i++ {
 		s := param[i]
@@ -144,8 +145,31 @@ func Run(param []string) ([]int, error) {
 				if err != nil {
 					return []int{}, err
 				}
-				//fmt.Println(n)
 				resultat = append(resultat, n)
+			}
+		} else if s == ":" {
+			i++
+			nom_programme := param[i]
+			i++
+			var instr []string
+			for ; i < len(param); i++ {
+				s = param[i]
+				if s == ";" {
+					break
+				} else {
+					instr = append(instr, s)
+				}
+			}
+			programmes[nom_programme] = instr
+		} else if v, found := programmes[s]; found {
+			var instr = v
+			for j := 0; j < len(instr); j++ {
+				var err error
+				s := instr[j]
+				nombres, err = executeOperation(s, nombres)
+				if err != nil {
+					return []int{}, err
+				}
 			}
 		} else {
 			var err error
@@ -156,10 +180,14 @@ func Run(param []string) ([]int, error) {
 		}
 	}
 
-	if len(nombres) != 1 {
-		return []int{}, fmt.Errorf("la pile n'est pas correcte")
+	if len(programmes) == 0 || len(nombres) == 1 {
+		if len(nombres) != 1 {
+			return []int{}, fmt.Errorf("la pile n'est pas correcte")
+		} else {
+			resultat = append(resultat, nombres[0])
+			return resultat, nil
+		}
 	} else {
-		resultat = append(resultat, nombres[0])
 		return resultat, nil
 	}
 }
