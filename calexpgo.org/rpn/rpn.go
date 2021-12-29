@@ -15,8 +15,17 @@ type stacki interface {
 	executeOperation(s string) error
 }
 
+type programi interface {
+	addProgram(name string, instr []string)
+	findProgram(name string) ([]string, bool)
+}
+
 type stack struct {
 	nombres []int
+}
+
+type program struct {
+	programmes map[string][]string
 }
 
 func isInt(s string) bool {
@@ -139,14 +148,23 @@ func (stack *stack) executeOperation(s string) error {
 	return nil
 }
 
-func Run(param []string) ([]int, error) {
-	var stack = stack{nombres: make([]int, 0, 100)}
+func (program *program) addProgram(name string, instr []string) {
+	name = strings.ToLower(name)
+	program.programmes[name] = instr
+}
 
-	var resultat = []int{}
-	var programmes = make(map[string][]string)
+func (program program) findProgram(name string) ([]string, bool) {
+	name = strings.ToLower(name)
+	instr, found := program.programmes[name]
+	return instr, found
+}
 
-	for i := 0; i < len(param); i++ {
-		s := param[i]
+func execute(list3 []string, stack stack, programmes program, resultat []int) ([]int, error) {
+	for i := 0; i < len(list3); i++ {
+		s := list3[i]
+		if s == ";" {
+			return []int{}, fmt.Errorf("erreur pour parser les instructions: point virgule au mauvais endroit")
+		}
 		if isInt(s) {
 			v, err := strconv.ParseInt(s, 10, 64)
 			if err == nil {
@@ -154,39 +172,21 @@ func Run(param []string) ([]int, error) {
 			} else {
 				return []int{}, fmt.Errorf("erreur pour parser le nombre: %v", err)
 			}
-		} else if s == ";" {
-			if stack.len() > 0 {
-				var n int
-				var err error
-				n, err = stack.pop()
-				if err != nil {
-					return []int{}, err
-				}
-				resultat = append(resultat, n)
-			}
 		} else if s == ":" {
 			i++
-			nom_programme := param[i]
+			nom_programme := list3[i]
 			i++
 			var instr []string
-			for ; i < len(param); i++ {
-				s = param[i]
-				if s == ";" {
-					break
-				} else {
-					instr = append(instr, s)
-				}
+			for ; i < len(list3); i++ {
+				s = list3[i]
+				instr = append(instr, s)
 			}
-			programmes[nom_programme] = instr
-		} else if v, found := programmes[s]; found {
-			var instr = v
-			for j := 0; j < len(instr); j++ {
-				var err error
-				s := instr[j]
-				err = stack.executeOperation(s)
-				if err != nil {
-					return []int{}, err
-				}
+			programmes.addProgram(nom_programme, instr)
+		} else if instr, found := programmes.findProgram(s); found {
+			var err error
+			resultat, err = execute(instr, stack, programmes, resultat)
+			if err != nil {
+				return []int{}, err
 			}
 		} else {
 			var err error
@@ -197,7 +197,7 @@ func Run(param []string) ([]int, error) {
 		}
 	}
 
-	if len(programmes) == 0 || stack.len() == 1 {
+	if len(programmes.programmes) == 0 || stack.len() == 1 {
 		if stack.len() != 1 {
 			return []int{}, fmt.Errorf("la pile n'est pas correcte")
 		} else {
@@ -207,4 +207,39 @@ func Run(param []string) ([]int, error) {
 	} else {
 		return resultat, nil
 	}
+}
+
+func Run(param []string) ([]int, error) {
+	var stack = stack{nombres: make([]int, 0, 100)}
+
+	var resultat = []int{}
+	var programmes = program{programmes: make(map[string][]string)}
+
+	var list = [][]string{}
+	var list2 = []string{}
+
+	for i := 0; i < len(param); i++ {
+		s := param[i]
+		if s == ";" {
+			list = append(list, list2)
+			list2 = []string{}
+		} else {
+			list2 = append(list2, s)
+		}
+	}
+
+	if len(list2) > 0 {
+		list = append(list, list2)
+	}
+
+	for j := 0; j < len(list); j++ {
+		list3 := list[j]
+		var err error = nil
+		resultat, err = execute(list3, stack, programmes, resultat)
+		if err != nil {
+			return []int{}, err
+		}
+	}
+
+	return resultat, nil
 }
