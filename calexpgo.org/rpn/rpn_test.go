@@ -79,8 +79,10 @@ func Test_executeOperation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := executeOperation(tt.args.s, tt.args.nombres); !reflect.DeepEqual(got, tt.want.s) {
-				t.Errorf("executeOperation() = %v, want %v", got, tt.want)
+			var stack = stack{nombres: tt.args.nombres}
+			if err := stack.executeOperation(tt.args.s); !reflect.DeepEqual(stack.nombres, tt.want.s) ||
+				err != nil {
+				t.Errorf("executeOperation() = %v, want %v", stack.nombres, tt.want)
 			}
 		})
 	}
@@ -104,8 +106,9 @@ func Test_executeOperationError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, err := executeOperation(tt.args.s, tt.args.nombres); got != nil || !reflect.DeepEqual(err.Error(), tt.want.Error()) {
-				t.Errorf("executeOperation() = (%v, '%v'), want '%v'", got, err, tt.want)
+			var stack = stack{nombres: tt.args.nombres}
+			if err := stack.executeOperation(tt.args.s); !reflect.DeepEqual(err.Error(), tt.want.Error()) {
+				t.Errorf("executeOperation() = (%v, '%v'), want '%v'", tt.args.s, err, tt.want)
 			}
 		})
 	}

@@ -7,6 +7,18 @@ import (
 	"unicode"
 )
 
+type stacki interface {
+	errorStackSize(nombres []int, minimalSize int) error
+	push(valeur int)
+	pop() (int, error)
+	len() int
+	executeOperation(s string) error
+}
+
+type stack struct {
+	nombres []int
+}
+
 func isInt(s string) bool {
 	if strings.Trim(s, " ") == "" {
 		return false
@@ -22,41 +34,46 @@ func isInt(s string) bool {
 	return true
 }
 
-func errorStackSize(nombres []int, minimalSize int) error {
-	if len(nombres) < minimalSize {
+func (s *stack) errorStackSize(minimalSize int) error {
+	if len(s.nombres) < minimalSize {
 		return fmt.Errorf("la pile n'est pas correcte")
 	}
 	return nil
 }
 
-func push(nombres []int, valeur int) []int {
-	return append(nombres, valeur)
+func (s *stack) push(valeur int) {
+	s.nombres = append(s.nombres, valeur)
 }
 
-func pop(nombres []int) ([]int, int, error) {
-	err := errorStackSize(nombres, 1)
+func (s *stack) pop() (int, error) {
+	err := s.errorStackSize(1)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
-	n := nombres[len(nombres)-1]
-	return nombres[:len(nombres)-1], n, nil
+	n := s.nombres[len(s.nombres)-1]
+	s.nombres = s.nombres[:len(s.nombres)-1]
+	return n, nil
 }
 
-func executeOperation(s string, nombres []int) ([]int, error) {
+func (s *stack) len() int {
+	return len(s.nombres)
+}
+
+func (stack *stack) executeOperation(s string) error {
 	var err error
 	if s == "+" || s == "-" || s == "*" || s == "/" || s == "%" {
-		err = errorStackSize(nombres, 2)
+		err = stack.errorStackSize(2)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		var n1, n2 int
-		nombres, n2, err = pop(nombres)
+		n2, err = stack.pop()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		nombres, n1, err = pop(nombres)
+		n1, err = stack.pop()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		var n = 0
 		if s == "+" {
@@ -67,63 +84,63 @@ func executeOperation(s string, nombres []int) ([]int, error) {
 			n = n1 * n2
 		} else if s == "/" {
 			if n2 == 0 {
-				return nil, fmt.Errorf("division par zero")
+				return fmt.Errorf("division par zero")
 			}
 			n = n1 / n2
 		} else if s == "%" {
 			if n2 == 0 {
-				return nil, fmt.Errorf("division par zero")
+				return fmt.Errorf("division par zero")
 			}
 			n = n1 % n2
 		}
-		nombres = push(nombres, n)
+		stack.push(n)
 	} else if strings.ToLower(s) == "dup" {
-		err = errorStackSize(nombres, 1)
+		err = stack.errorStackSize(1)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		n := nombres[len(nombres)-1]
-		nombres = push(nombres, n)
+		n := stack.nombres[stack.len()-1]
+		stack.push(n)
 	} else if strings.ToLower(s) == "drop" {
-		err = errorStackSize(nombres, 1)
+		err = stack.errorStackSize(1)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		nombres, _, err = pop(nombres)
+		_, err = stack.pop()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else if strings.ToLower(s) == "swap" {
-		err = errorStackSize(nombres, 2)
+		err = stack.errorStackSize(2)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		var n1, n2 int
-		nombres, n2, err = pop(nombres)
+		n2, err = stack.pop()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		nombres, n1, err = pop(nombres)
+		n1, err = stack.pop()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		nombres = push(nombres, n2)
-		nombres = push(nombres, n1)
+		stack.push(n2)
+		stack.push(n1)
 	} else if strings.ToLower(s) == "over" {
-		err = errorStackSize(nombres, 2)
+		err = stack.errorStackSize(2)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		n1 := nombres[len(nombres)-2]
-		nombres = push(nombres, n1)
+		n1 := stack.nombres[stack.len()-2]
+		stack.push(n1)
 	} else {
-		return nil, fmt.Errorf("opérateur invalide : " + s)
+		return fmt.Errorf("opérateur invalide : " + s)
 	}
-	return nombres, nil
+	return nil
 }
 
 func Run(param []string) ([]int, error) {
-	var nombres = make([]int, 0, 100)
+	var stack = stack{nombres: make([]int, 0, 100)}
 
 	var resultat = []int{}
 	var programmes = make(map[string][]string)
@@ -133,15 +150,15 @@ func Run(param []string) ([]int, error) {
 		if isInt(s) {
 			v, err := strconv.ParseInt(s, 10, 64)
 			if err == nil {
-				nombres = push(nombres, int(v))
+				stack.push(int(v))
 			} else {
 				return []int{}, fmt.Errorf("erreur pour parser le nombre: %v", err)
 			}
 		} else if s == ";" {
-			if len(nombres) > 0 {
+			if stack.len() > 0 {
 				var n int
 				var err error
-				nombres, n, err = pop(nombres)
+				n, err = stack.pop()
 				if err != nil {
 					return []int{}, err
 				}
@@ -166,25 +183,25 @@ func Run(param []string) ([]int, error) {
 			for j := 0; j < len(instr); j++ {
 				var err error
 				s := instr[j]
-				nombres, err = executeOperation(s, nombres)
+				err = stack.executeOperation(s)
 				if err != nil {
 					return []int{}, err
 				}
 			}
 		} else {
 			var err error
-			nombres, err = executeOperation(s, nombres)
+			err = stack.executeOperation(s)
 			if err != nil {
 				return []int{}, err
 			}
 		}
 	}
 
-	if len(programmes) == 0 || len(nombres) == 1 {
-		if len(nombres) != 1 {
+	if len(programmes) == 0 || stack.len() == 1 {
+		if stack.len() != 1 {
 			return []int{}, fmt.Errorf("la pile n'est pas correcte")
 		} else {
-			resultat = append(resultat, nombres[0])
+			resultat = append(resultat, stack.nombres[0])
 			return resultat, nil
 		}
 	} else {
